@@ -1,6 +1,7 @@
 # chengxu_homework
 
-1.git commit -m "添加 main.c 文件
+1.git commit -m 创建hello.c
 
-2.修改从键盘读取并显示文字
-"������" 
+2.创建main.c，添加input功能
+
+3.创建ex01文件夹
