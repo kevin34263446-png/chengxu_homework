@@ -1,19 +1,31 @@
-// 定义LED引脚，ESP32通常板载LED连接在GPIO 2
-const int ledPin = 2; 
+// 定义LED引脚
+const int ledPin = 2;  
+
+// 设置PWM属性
+const int freq = 5000;          // 频率 5000Hz
+const int resolution = 8;       // 分辨率 8位 (0-255)
 
 void setup() {
-  // 初始化串口通信，设置波特率为115200
   Serial.begin(115200);
-  // 将LED引脚设置为输出模式
-  pinMode(ledPin, OUTPUT);
+
+  // 【新版用法】直接将引脚、频率和分辨率绑定
+  // 它会自动返回一个关联的通道（如果需要的话）
+  ledcAttach(ledPin, freq, resolution);
 }
 
 void loop() {
-  digitalWrite(ledPin, HIGH);  // 点亮LED
-  Serial.println("LED ON");    // 串口输出提示
-  delay(1000);                 // 保持1秒（1000毫秒）
+  // 逐渐变亮
+  for(int dutyCycle = 0; dutyCycle <= 255; dutyCycle++){   
+    // 【新版用法】直接通过引脚号写入，不再需要指定通道
+    ledcWrite(ledPin, dutyCycle);   
+    delay(10);
+  }
+
+  // 逐渐变暗
+  for(int dutyCycle = 255; dutyCycle >= 0; dutyCycle--){
+    ledcWrite(ledPin, dutyCycle);   
+    delay(10);
+  }
   
-  digitalWrite(ledPin, LOW);   // 熄灭LED
-  Serial.println("LED OFF");   // 串口输出提示
-  delay(1000);                 // 保持1秒
+  Serial.println("Breathing cycle completed");
 }
