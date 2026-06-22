@@ -1,31 +1,17 @@
-// 定义LED引脚
-const int ledPin = 2;  
-
-// 设置PWM属性
-const int freq = 5000;          // 频率 5000Hz
-const int resolution = 8;       // 分辨率 8位 (0-255)
+// ex02.ino 1Hz LED闪烁 millis实现
+const int ledPin = 16;
+unsigned long preTime = 0; // 记录上次状态切换时间
+const unsigned long interval = 1000; // 间隔1000ms=1s
 
 void setup() {
-  Serial.begin(115200);
-
-  // 【新版用法】直接将引脚、频率和分辨率绑定
-  // 它会自动返回一个关联的通道（如果需要的话）
-  ledcAttach(ledPin, freq, resolution);
+  pinMode(ledPin, OUTPUT);
 }
 
 void loop() {
-  // 逐渐变亮
-  for(int dutyCycle = 0; dutyCycle <= 255; dutyCycle++){   
-    // 【新版用法】直接通过引脚号写入，不再需要指定通道
-    ledcWrite(ledPin, dutyCycle);   
-    delay(10);
+  unsigned long curTime = millis();
+  // 时间差超过1000ms切换LED状态
+  if (curTime - preTime >= interval) {
+    digitalWrite(ledPin, !digitalRead(ledPin));
+    preTime = curTime;
   }
-
-  // 逐渐变暗
-  for(int dutyCycle = 255; dutyCycle >= 0; dutyCycle--){
-    ledcWrite(ledPin, dutyCycle);   
-    delay(10);
-  }
-  
-  Serial.println("Breathing cycle completed");
 }
