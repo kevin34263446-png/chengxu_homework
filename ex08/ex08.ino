@@ -1,13 +1,18 @@
-// ex08.ino Step1 — WiFi AP + Web按钮布防/撤防 + 状态变量
+// ex08.ino Step2 — 布防状态下触摸触发LED闪烁报警
 #include <WiFi.h>
 #include <WebServer.h>
 
 const char* ap_ssid = "ESP32-ALARM";
 const char* ap_pass = "12345678";
-const int ledPin = 2;
+const int ledPin  = 2;
+const int touchPin = T0;
+const int touchThreshold = 400;
 
 enum State { DISARMED, ARMED, ALARM };
 State sysState = DISARMED;
+
+unsigned long preTime = 0;
+bool ledOn = false;
 
 WebServer server(80);
 
@@ -48,6 +53,8 @@ void handleArm() {
 
 void handleDisarm() {
   sysState = DISARMED;
+  digitalWrite(ledPin, LOW);
+  ledOn = false;
   Serial.println("系统已撤防");
   server.sendHeader("Location", "/");
   server.send(303);
@@ -73,4 +80,22 @@ void setup() {
 
 void loop() {
   server.handleClient();
+
+  // 布防状态下检测触摸
+  if (sysState == ARMED) {
+    int touchVal = touchRead(touchPin);
+    if (touchVal < touchThreshold) {
+      sysState = ALARM;
+      Serial.println("⚠ 报警触发！");
+    }
+  }
+
+  // 报警状态下LED高频闪烁
+  if (sysState == ALARM) {
+    if (millis() - preTime >= 150) {
+      ledOn = !ledOn;
+      digitalWrite(ledPin, ledOn ? HIGH : LOW);
+      preTime = millis();
+    }
+  }
 }
