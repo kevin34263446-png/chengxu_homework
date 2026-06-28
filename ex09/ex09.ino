@@ -97,8 +97,14 @@ void setup() {
   Serial.begin(115200);
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(ap_ssid, ap_pass);
+  IPAddress localIP(192, 168, 4, 1);
+  IPAddress gateway(192, 168, 4, 1);
+  IPAddress subnet(255, 255, 255, 0);
+  WiFi.softAPConfig(localIP, gateway, subnet);
+  WiFi.softAP(ap_ssid, ap_pass, 6);
   Serial.println("AP已开启");
+  Serial.print("SSID: ");
+  Serial.println(ap_ssid);
   Serial.print("IP: ");
   Serial.println(WiFi.softAPIP());
 
