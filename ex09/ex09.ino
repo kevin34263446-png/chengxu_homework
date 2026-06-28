@@ -1,4 +1,4 @@
-// ex09.ino Step1 — Web服务器 + 触摸传感器数据API接口
+// ex09.ino Step2 — AJAX轮询实时拉取触摸传感器数值
 #include <WiFi.h>
 #include <WebServer.h>
 
@@ -19,9 +19,29 @@ void handleRoot() {
 </head>
 <body style="font-family:Arial; text-align:center; margin-top:60px;">
   <h1>实时传感器仪表盘</h1>
-  <p>触摸传感器数值:</p>
+  <p>触摸传感器数值（越小表示越近）</p>
   <p style="font-size:64px;" id="sensorVal">--</p>
   <p id="status">等待数据...</p>
+
+  <script>
+    function fetchSensor() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/api/touch', true);
+      xhr.onload = function() {
+        if (xhr.status == 200) {
+          var val = parseInt(xhr.responseText);
+          document.getElementById('sensorVal').textContent = val;
+          if (val < 40) {
+            document.getElementById('status').textContent = '⚠ 已触摸！';
+          } else {
+            document.getElementById('status').textContent = '未触摸';
+          }
+        }
+      };
+      xhr.send();
+    }
+    setInterval(fetchSensor, 200);  // 每200ms拉取一次
+  </script>
 </body>
 </html>
 )rawliteral";
