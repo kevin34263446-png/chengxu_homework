@@ -1,9 +1,11 @@
-// ex09.ino Step3 — 仪表盘样式美化 + 实时数值 + 触摸状态指示
+// ex09.ino — 实时传感器Web仪表盘 (STA模式)
 #include <WiFi.h>
 #include <WebServer.h>
 
-const char* ap_ssid = "ESP32-DASHBOARD";
-const char* ap_pass = "12345678";
+// ====== 改成你家的WiFi名和密码 ======
+const char* sta_ssid = "shulaoda";
+const char* sta_pass = "skwskw123";
+
 const int touchPin = T0;
 
 WebServer server(80);
@@ -15,7 +17,7 @@ void handleRoot() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>实时传感器仪表盘</title>
+  <title>传感器仪表盘</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Segoe UI',Arial; text-align:center;
@@ -56,13 +58,9 @@ void handleRoot() {
           var elVal = document.getElementById('sensorVal');
           var elBar = document.getElementById('bar');
           var elSta = document.getElementById('status');
-
           elVal.textContent = val;
-
-          // 进度条映射：val大→进度小，val小→进度大（触摸时数值小）
-          var pct = Math.max(0, Math.min(100, (100 - val))); // 值越小进度越大
+          var pct = Math.max(0, Math.min(100, (100 - val)));
           elBar.style.width = pct + '%';
-
           if (val < 40) {
             elVal.className = 'value touched';
             elBar.style.background = '#ff7b72';
@@ -96,17 +94,18 @@ void handleApiTouch() {
 void setup() {
   Serial.begin(115200);
 
-  WiFi.mode(WIFI_AP);
-  IPAddress localIP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 4, 1);
-  IPAddress subnet(255, 255, 255, 0);
-  WiFi.softAPConfig(localIP, gateway, subnet);
-  WiFi.softAP(ap_ssid, ap_pass, 6);
-  Serial.println("AP已开启");
-  Serial.print("SSID: ");
-  Serial.println(ap_ssid);
-  Serial.print("IP: ");
-  Serial.println(WiFi.softAPIP());
+  Serial.print("连接WiFi: ");
+  Serial.println(sta_ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(sta_ssid, sta_pass);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("WiFi已连接");
+  Serial.print("请在浏览器打开: http://");
+  Serial.println(WiFi.localIP());
 
   server.on("/", handleRoot);
   server.on("/api/touch", handleApiTouch);

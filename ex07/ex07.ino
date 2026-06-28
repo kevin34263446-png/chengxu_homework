@@ -1,11 +1,12 @@
-// ex07.ino Step3 — JS fetch 发送滑动条数值，ESP32解析URL并控制PWM
+// ex07.ino — Web无极调光器 (STA模式)
 #include <WiFi.h>
 #include <WebServer.h>
 
-const char* ap_ssid = "ESP32-DIMMER";
-const char* ap_pass = "12345678";
-const int ledPin = 2;
+// ====== 改成你家的WiFi名和密码 ======
+const char* sta_ssid = "shulaoda";
+const char* sta_pass = "skwskw123";
 
+const int ledPin = 2;
 const int freq = 5000;
 const int resolution = 8;
 
@@ -61,22 +62,23 @@ void setup() {
   ledcAttach(ledPin, freq, resolution);
   ledcWrite(ledPin, 0);
 
-  WiFi.mode(WIFI_AP);
-  delay(100);
-  bool apOK = WiFi.softAP(ap_ssid, ap_pass);
-  Serial.print("AP启动状态: ");
-  Serial.println(apOK ? "成功" : "失败");
-  Serial.print("SSID: ");
-  Serial.println(ap_ssid);
-  Serial.print("IP: ");
-  Serial.println(WiFi.softAPIP());
-  Serial.print("MAC: ");
-  Serial.println(WiFi.softAPmacAddress());
+  Serial.print("连接WiFi: ");
+  Serial.println(sta_ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(sta_ssid, sta_pass);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("WiFi已连接");
+  Serial.print("请在浏览器打开: http://");
+  Serial.println(WiFi.localIP());
 
   server.on("/", handleRoot);
   server.on("/set", handleSet);
   server.begin();
-  Serial.println("无极调光器已就绪");
 }
 
 void loop() {

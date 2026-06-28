@@ -1,9 +1,11 @@
-// ex08.ino Step3 — 触摸报警锁定 + 软件防抖，仅网页撤防可解除
+// ex08.ino — 物联网安防报警器 (STA模式)
 #include <WiFi.h>
 #include <WebServer.h>
 
-const char* ap_ssid = "ESP32-ALARM";
-const char* ap_pass = "12345678";
+// ====== 改成你家的WiFi名和密码 ======
+const char* sta_ssid = "shulaoda";
+const char* sta_pass = "skwskw123";
+
 const int ledPin  = 2;
 const int touchPin = T0;
 const int touchThreshold = 400;
@@ -69,17 +71,18 @@ void setup() {
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
 
-  WiFi.mode(WIFI_AP);
-  IPAddress localIP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 4, 1);
-  IPAddress subnet(255, 255, 255, 0);
-  WiFi.softAPConfig(localIP, gateway, subnet);
-  WiFi.softAP(ap_ssid, ap_pass, 6);
-  Serial.println("AP已开启");
-  Serial.print("SSID: ");
-  Serial.println(ap_ssid);
-  Serial.print("IP: ");
-  Serial.println(WiFi.softAPIP());
+  Serial.print("连接WiFi: ");
+  Serial.println(sta_ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(sta_ssid, sta_pass);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("WiFi已连接");
+  Serial.print("请在浏览器打开: http://");
+  Serial.println(WiFi.localIP());
 
   server.on("/", handleRoot);
   server.on("/arm", handleArm);
@@ -91,22 +94,19 @@ void setup() {
 void loop() {
   server.handleClient();
 
-  // 仅在布防状态下检测触摸（边缘检测 + 防抖）
   if (sysState == ARMED) {
     int touchVal = touchRead(touchPin);
     bool curTouch = (touchVal < touchThreshold);
-
     if (curTouch && !lastTouchState) {
       if (millis() - lastDebounceTime > debounceDelay) {
         sysState = ALARM;
-        Serial.println("⚠ 报警触发！触摸传感器被激活");
+        Serial.println("⚠ 报警触发！");
         lastDebounceTime = millis();
       }
     }
     lastTouchState = curTouch;
   }
 
-  // 报警状态：LED高频闪烁（锁定，直到网页撤防）
   if (sysState == ALARM) {
     if (millis() - preTime >= 150) {
       ledOn = !ledOn;
