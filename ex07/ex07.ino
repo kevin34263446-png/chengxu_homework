@@ -58,6 +58,8 @@ void handleSet() {
 
 void setup() {
   Serial.begin(115200);
+  delay(1000);
+
   ledcAttach(ledPin, freq, resolution);
   ledcWrite(ledPin, 0);
 
@@ -78,6 +80,7 @@ void setup() {
   server.on("/", handleRoot);
   server.on("/set", handleSet);
   server.begin();
+  Serial.println("无极调光器已就绪");
 }
 
 void loop() {

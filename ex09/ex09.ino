@@ -6,7 +6,8 @@
 const char* sta_ssid = "KevinPura 70 Pro+";
 const char* sta_pass = "skwskw123";
 
-const int touchPin = T0;
+const int touchPin = T0;        // GPIO4
+const int touchThreshold = 200; // 低于此值视为触摸 (空闲~1400, 触摸~100)
 
 WebServer server(80);
 
@@ -40,45 +41,53 @@ void handleRoot() {
 </head>
 <body>
   <div class="card">
-    <h1>📊 触摸传感器实时仪表盘</h1>
-    <p class="sub">数值越小 → 手指越靠近触摸引脚</p>
+    <h1>&#x1F4CA; 触摸传感器实时仪表盘</h1>
+    <p class="sub">数值越小 &#x2192; 手指越靠近触摸引脚</p>
     <div class="value" id="sensorVal">--</div>
     <div class="label">touchRead(T0) 原始值</div>
     <div class="bar-bg"><div class="bar-fg" id="bar" style="width:0%;background:#58a6ff;"></div></div>
-    <div class="status" id="status">⏳ 等待数据...</div>
+    <div class="status" id="status">&#x23F3; 等待数据...</div>
   </div>
 
   <script>
+    var lastVal = 0;
     function fetchSensor() {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', '/api/touch', true);
+      xhr.timeout = 3000;
       xhr.onload = function() {
         if (xhr.status == 200) {
           var val = parseInt(xhr.responseText);
+          if (isNaN(val)) return;
+          lastVal = val;
           var elVal = document.getElementById('sensorVal');
           var elBar = document.getElementById('bar');
           var elSta = document.getElementById('status');
           elVal.textContent = val;
-          var pct = Math.max(0, Math.min(100, (100 - val)));
+          // 空闲~1400, 触摸~100 — 映射到进度条 0-100%
+          var pct = Math.max(0, Math.min(100, Math.round((1500 - val) * 100 / 1400)));
           elBar.style.width = pct + '%';
-          if (val < 40) {
+          if (val < 200) {
             elVal.className = 'value touched';
             elBar.style.background = '#ff7b72';
-            elSta.innerHTML = '🔴 <b>已触摸！</b> 手指接触引脚';
-          } else if (val < 60) {
+            elSta.innerHTML = '&#x1F534; <b>已触摸！</b> 手指接触引脚';
+          } else if (val < 600) {
             elVal.className = 'value';
             elBar.style.background = '#d29922';
-            elSta.innerHTML = '🟡 <b>靠近中</b> 手指接近引脚';
+            elSta.innerHTML = '&#x1F7E1; <b>靠近中</b> 手指接近引脚';
           } else {
             elVal.className = 'value';
             elBar.style.background = '#58a6ff';
-            elSta.innerHTML = '🟢 <b>空闲</b> 未检测到触摸';
+            elSta.innerHTML = '&#x1F7E2; <b>空闲</b> 未检测到触摸';
           }
         }
       };
+      xhr.onerror = function() { /* 网络错误, 忽略, 等下次轮询 */ };
+      xhr.ontimeout = function() { xhr.abort(); };
       xhr.send();
     }
-    setInterval(fetchSensor, 200);
+    fetchSensor();
+    setInterval(fetchSensor, 500);
   </script>
 </body>
 </html>
@@ -88,6 +97,10 @@ void handleRoot() {
 
 void handleApiTouch() {
   int touchVal = touchRead(touchPin);
+  Serial.print("touchRead(T0) = ");
+  Serial.print(touchVal);
+  Serial.print(touchVal < touchThreshold ? "  < 触摸!" : "");
+  Serial.println();
   server.send(200, "text/plain", String(touchVal));
 }
 
