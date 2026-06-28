@@ -62,16 +62,16 @@ void setup() {
   ledcWrite(ledPin, 0);
 
   WiFi.mode(WIFI_AP);
-  IPAddress localIP(192, 168, 4, 1);
-  IPAddress gateway(192, 168, 4, 1);
-  IPAddress subnet(255, 255, 255, 0);
-  WiFi.softAPConfig(localIP, gateway, subnet);
-  WiFi.softAP(ap_ssid, ap_pass, 6);  // 信道6，手机兼容性更好
-  Serial.println("AP已开启");
+  delay(100);
+  bool apOK = WiFi.softAP(ap_ssid, ap_pass);
+  Serial.print("AP启动状态: ");
+  Serial.println(apOK ? "成功" : "失败");
   Serial.print("SSID: ");
   Serial.println(ap_ssid);
   Serial.print("IP: ");
   Serial.println(WiFi.softAPIP());
+  Serial.print("MAC: ");
+  Serial.println(WiFi.softAPmacAddress());
 
   server.on("/", handleRoot);
   server.on("/set", handleSet);
