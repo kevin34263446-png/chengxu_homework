@@ -3,7 +3,7 @@
 #include <WebServer.h>
 
 // ====== 改成你家的WiFi名和密码 ======
-const char* sta_ssid = "shulaoda";
+const char* sta_ssid = "KevinPura 70 Pro+";
 const char* sta_pass = "skwskw123";
 
 const int touchPin = T0;
