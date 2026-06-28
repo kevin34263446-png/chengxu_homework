@@ -2,7 +2,6 @@
 const int touchPin = T0;
 const int ledPin   = 2;
 const int freq = 5000;
-const int ledChannel = 0;
 const int resolution = 8;
 const int touchThreshold = 400;
 const unsigned long debounceDelay = 200;
@@ -16,8 +15,7 @@ unsigned long lastDebounceTime = 0;
 
 void setup() {
   Serial.begin(115200);
-  ledcSetup(ledChannel, freq, resolution);
-  ledcAttachPin(ledPin, ledChannel);
+  ledcAttach(ledPin, freq, resolution);
   Serial.println("ex05: 多档位触摸调速呼吸灯");
 }
 
@@ -39,11 +37,11 @@ void loop() {
   int stepDelay = speedDelays[speedLevel];
 
   for (int duty = 0; duty <= 255; duty++) {
-    ledcWrite(ledChannel, duty);
+    ledcWrite(ledPin, duty);
     delay(stepDelay);
   }
   for (int duty = 255; duty >= 0; duty--) {
-    ledcWrite(ledChannel, duty);
+    ledcWrite(ledPin, duty);
     delay(stepDelay);
   }
 }

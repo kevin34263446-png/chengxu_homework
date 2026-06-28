@@ -7,7 +7,6 @@ const char* ap_pass = "12345678";
 const int ledPin = 2;
 
 const int freq = 5000;
-const int ledChannel = 0;
 const int resolution = 8;
 
 WebServer server(80);
@@ -50,7 +49,7 @@ void handleSet() {
   if (server.hasArg("val")) {
     int duty = server.arg("val").toInt();
     duty = constrain(duty, 0, 255);
-    ledcWrite(ledChannel, duty);
+    ledcWrite(ledPin, duty);
     server.send(200, "text/plain", "OK");
   } else {
     server.send(400, "text/plain", "Missing val");
@@ -59,9 +58,8 @@ void handleSet() {
 
 void setup() {
   Serial.begin(115200);
-  ledcSetup(ledChannel, freq, resolution);
-  ledcAttachPin(ledPin, ledChannel);
-  ledcWrite(ledChannel, 0);
+  ledcAttach(ledPin, freq, resolution);
+  ledcWrite(ledPin, 0);
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ap_ssid, ap_pass);
