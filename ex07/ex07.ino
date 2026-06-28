@@ -1,4 +1,4 @@
-// ex07.ino Step2 — HTML页面加入滑动条控件
+// ex07.ino Step3 — JS fetch 发送滑动条数值，ESP32解析URL并控制PWM
 #include <WiFi.h>
 #include <WebServer.h>
 
@@ -20,17 +20,41 @@ void handleRoot() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>无极调光器</title>
+  <style>
+    body { font-family:Arial; text-align:center; margin-top:60px; background:#1a1a2e; color:#eee; }
+    input[type=range] { width:80%; height:30px; margin:20px 0; }
+    #val { font-size:48px; font-weight:bold; color:#00d4ff; }
+  </style>
 </head>
-<body style="font-family:Arial; text-align:center; margin-top:50px;">
+<body>
   <h1>LED 无极调光器</h1>
-  <p>拖动滑动条调节LED亮度</p>
-  <input type="range" min="0" max="255" value="0"
-         style="width:80%; height:40px;">
+  <p>拖动滑动条实时调节LED亮度</p>
+  <input type="range" min="0" max="255" value="0" id="slider">
   <p>当前亮度: <span id="val">0</span> / 255</p>
+
+  <script>
+    const slider = document.getElementById('slider');
+    const valEl  = document.getElementById('val');
+    slider.oninput = function() {
+      valEl.textContent = this.value;
+      fetch('/set?val=' + this.value);
+    };
+  </script>
 </body>
 </html>
 )rawliteral";
   server.send(200, "text/html; charset=UTF-8", html);
+}
+
+void handleSet() {
+  if (server.hasArg("val")) {
+    int duty = server.arg("val").toInt();
+    duty = constrain(duty, 0, 255);
+    ledcWrite(ledChannel, duty);
+    server.send(200, "text/plain", "OK");
+  } else {
+    server.send(400, "text/plain", "Missing val");
+  }
 }
 
 void setup() {
@@ -46,8 +70,9 @@ void setup() {
   Serial.println(WiFi.softAPIP());
 
   server.on("/", handleRoot);
+  server.on("/set", handleSet);
   server.begin();
-  Serial.println("Web服务器已启动");
+  Serial.println("无极调光器已就绪");
 }
 
 void loop() {
