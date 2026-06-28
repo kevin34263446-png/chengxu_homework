@@ -1,10 +1,12 @@
-// ex04.ino Step2 — 加入布尔状态变量 + 边缘检测（按下瞬间翻转LED）
+// ex04.ino Step3 — 加入软件防抖，最终版：摸一下亮、再摸一下灭
 const int touchPin = T0;
 const int ledPin   = 2;
 const int touchThreshold = 400;
+const unsigned long debounceDelay = 200;  // 防抖延时200ms
 
 bool ledState       = false;
 bool lastTouchState = false;
+unsigned long lastDebounceTime = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -16,12 +18,15 @@ void loop() {
   int touchVal = touchRead(touchPin);
   bool curTouch = (touchVal < touchThreshold);
 
-  // 边缘检测：上次未触摸，当前被触摸 → 按下瞬间
+  // 边缘检测 + 软件防抖
   if (curTouch && !lastTouchState) {
-    ledState = !ledState;                       // 翻转LED状态
-    digitalWrite(ledPin, ledState ? HIGH : LOW);
-    Serial.print("触发！LED: ");
-    Serial.println(ledState ? "ON" : "OFF");
+    if (millis() - lastDebounceTime > debounceDelay) {
+      ledState = !ledState;
+      digitalWrite(ledPin, ledState ? HIGH : LOW);
+      Serial.print("触摸触发！LED: ");
+      Serial.println(ledState ? "ON" : "OFF");
+      lastDebounceTime = millis();
+    }
   }
 
   lastTouchState = curTouch;
