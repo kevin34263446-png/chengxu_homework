@@ -1,10 +1,10 @@
-// ex08.ino — 物联网安防报警器 (STA模式)
+// ex08.ino — 物联网安防报警器 (AP模式)
 #include <WiFi.h>
 #include <WebServer.h>
 
-// ====== 改成你家的WiFi名和密码 ======
-const char* sta_ssid = "KevinPura 70 Pro+";
-const char* sta_pass = "skwskw123";
+// AP 热点配置
+const char* ap_ssid = "ESP32-Alarm-602";
+const char* ap_pass = "12345678";   // 至少8位，连接时输入
 
 const int ledPin  = 2;
 const int touchPin = T0;
@@ -52,6 +52,9 @@ void handleRoot() {
 
 void handleArm() {
   sysState = ARMED;
+  // 重置触摸检测状态，避免上一次布防的残留状态导致边沿检测失效
+  lastTouchState = (touchRead(touchPin) < touchThreshold);
+  lastDebounceTime = millis();
   Serial.println("🔒 系统已布防");
   server.sendHeader("Location", "/");
   server.send(303);
@@ -71,18 +74,25 @@ void setup() {
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
 
-  Serial.print("连接WiFi: ");
-  Serial.println(sta_ssid);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(sta_ssid, sta_pass);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  // 启动AP模式 — ESP32自己当热点
+  Serial.print("启动AP热点: ");
+  Serial.println(ap_ssid);
+  WiFi.mode(WIFI_AP);
+  boolean ok = WiFi.softAP(ap_ssid, ap_pass);
+
+  if (ok) {
+    Serial.println("AP热点已创建");
+    Serial.print("IP地址: ");
+    Serial.println(WiFi.softAPIP());  // 默认 192.168.4.1
+    Serial.print("用手机/电脑连接WiFi: ");
+    Serial.print(ap_ssid);
+    Serial.print("  密码: ");
+    Serial.println(ap_pass);
+    Serial.print("然后在浏览器打开: http://");
+    Serial.println(WiFi.softAPIP());
+  } else {
+    Serial.println("AP创建失败！");
   }
-  Serial.println();
-  Serial.println("WiFi已连接");
-  Serial.print("请在浏览器打开: http://");
-  Serial.println(WiFi.localIP());
 
   server.on("/", handleRoot);
   server.on("/arm", handleArm);
